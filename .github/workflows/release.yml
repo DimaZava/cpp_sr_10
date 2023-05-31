@@ -16,10 +16,8 @@ jobs:
           submodules: true
       - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
       - run: brew install cmake
-      # - run: brew install boost
       - run: cmake . -DPATCH_VERSION=${{ github.run_number }}
       - run: cmake --build .
-      - run: cmake --build . --target unit_tests
       - run: cmake --build . --target package
       - name: Create Release
         id: create_release
