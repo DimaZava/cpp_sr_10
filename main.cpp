@@ -189,7 +189,7 @@ private:
     void finish_embedded_command_if_needed()
     {
         if (current_group_command == nullptr ||
-            current_group_command != nullptr && !current_group_command->is_group_command())
+            (current_group_command != nullptr && !current_group_command->is_group_command()))
         {
             return;
         }
