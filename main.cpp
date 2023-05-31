@@ -2,12 +2,13 @@
 #include <iostream>
 #include <list>
 #include <sstream>
-#include <stack>
+#include <ctime>
+#include <fstream>
 
 struct Command
 {
 public:
-    int counter = 0;
+    Command *parent_command;
 
     enum Mode
     {
@@ -19,6 +20,7 @@ public:
     {
         this->name = name;
         this->mode = mode;
+        this->creation_time = std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
     }
 
     Command(const Command &command)
@@ -26,6 +28,7 @@ public:
         this->name = command.name;
         this->mode = command.mode;
         this->subcommands = std::list<Command>(command.subcommands);
+        this->creation_time = command.creation_time;
     }
 
     Command(Command &&command)
@@ -33,14 +36,20 @@ public:
         this->name = command.name;
         this->mode = command.mode;
         this->subcommands = std::list<Command>(command.subcommands);
+        this->creation_time = command.creation_time;
     }
 
-    std::string get_name()
+    std::string get_name() const
     {
         return name;
     }
-    
-    Command& get_last()
+
+    std::string get_creation_time() const
+    {
+        return creation_time;
+    }
+
+    Command &get_last()
     {
         return subcommands.back();
     }
@@ -69,7 +78,14 @@ public:
             out << name;
         else
         {
-            out << (*subcommands.begin()).name;
+            if (!subcommands.begin()->is_group_command())
+            {
+                out << (*subcommands.begin()).name;
+            }
+            else 
+            {
+                out << (*subcommands.begin())().str();
+            }
 
             for (auto it = std::next(subcommands.begin()); it != subcommands.end(); ++it)
             {
@@ -102,6 +118,7 @@ private:
     std::string name;
     Mode mode;
     std::list<Command> subcommands;
+    std::string creation_time;
 };
 
 class Command_worker
@@ -137,7 +154,7 @@ public:
             }
             else // Append common or embedded command
             {
-                Command* new_command = new Command(line);
+                Command *new_command = new Command(line);
                 if (commands.size() != 0 && commands.back().is_group_command())
                 {
                     add_to_current_group_command(*new_command);
@@ -171,15 +188,15 @@ private:
 
     void finish_embedded_command_if_needed()
     {
-        if (!commands.back().is_group_command())
+        if (current_group_command == nullptr ||
+            current_group_command != nullptr && !current_group_command->is_group_command())
         {
             return;
         }
 
-        if (commands.back().is_group_nested())
+        if (current_group_command->parent_command != nullptr)
         {
-            current_group_command = nullptr;
-            current_group_command = &commands.back();
+            current_group_command = current_group_command->parent_command;
         }
         else
         {
@@ -210,7 +227,9 @@ private:
         else
         {
             add_to_current_group_command(command);
+            Command *parent_command = current_group_command;
             current_group_command = &current_group_command->get_last();
+            current_group_command->parent_command = parent_command;
         }
     }
 
@@ -234,6 +253,7 @@ private:
     void operator()() const
     {
         std::ostringstream out;
+
         if (!commands.back().is_group_command())
         {
             if (commands.size() == 0)
@@ -245,11 +265,20 @@ private:
             {
                 out << ", " << (*it)().str();
             }
+
+            std::ofstream file("bulk" + commands.front().get_creation_time() + ".log");
+            file << out.str();
+            file.close();
         }
         else
         {
             out << "bulk: " << commands.back()().str();
+
+            std::ofstream file("bulk" + commands.back().get_creation_time() + ".log");
+            file << out.str();
+            file.close();
         }
+        
         std::cout << out.str() << std::endl;
     }
 };

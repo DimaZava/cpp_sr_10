@@ -2,20 +2,19 @@ cmake_minimum_required(VERSION 3.26)
 
 project(sr_10)
 
-add_executable(main main.cpp)
-# add_library(ip_filter_lib ip_filter.h ip_filter.cpp)
+add_executable(bulk main.cpp)
 
-set_target_properties(main PROPERTIES
+set_target_properties(bulk PROPERTIES
     CXX_STANDARD 17
     CXX_STANDARD_REQUIRED ON
     )
 
 if (MSVC)
-    target_compile_options(main PRIVATE
+    target_compile_options(bulk PRIVATE
         /W4
     )
 else ()
-    target_compile_options(main PRIVATE
+    target_compile_options(bulk PRIVATE
         -Wall -Wextra -pedantic -Werror
     )
 endif()
@@ -26,7 +25,7 @@ else()
     set(CPACK_GENERATOR DEB)
 endif()
 
-install(TARGETS main RUNTIME DESTINATION bin)
+install(TARGETS bulk RUNTIME DESTINATION bin)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
