@@ -244,20 +244,28 @@ private:
     {
         if (bulk_counter == bulk_size || force)
         {
-            (*this)();
+            std::cout << (*this)().str() << std::endl;
             bulk_counter = 0;
             commands.clear();
         }
     }
 
-    void operator()() const
+    void configure_and_print_to_file(const Command& command,
+                                     std::string content) const
+    {
+        std::ofstream file("bulk" + command.get_creation_time() + ".log");
+        file << content;
+        file.close();
+    }
+
+    std::ostringstream operator()() const
     {
         std::ostringstream out;
 
         if (!commands.back().is_group_command())
         {
             if (commands.size() == 0)
-                return;
+                return out;
 
             out << "bulk: " << (*commands.begin())().str();
 
@@ -265,21 +273,12 @@ private:
             {
                 out << ", " << (*it)().str();
             }
-
-            std::ofstream file("bulk" + commands.front().get_creation_time() + ".log");
-            file << out.str();
-            file.close();
-        }
-        else
-        {
+            configure_and_print_to_file(commands.front(), out.str());
+        } else {
             out << "bulk: " << commands.back()().str();
-
-            std::ofstream file("bulk" + commands.back().get_creation_time() + ".log");
-            file << out.str();
-            file.close();
+            configure_and_print_to_file(commands.back(), out.str());
         }
-        
-        std::cout << out.str() << std::endl;
+        return out;
     }
 };
 
